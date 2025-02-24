@@ -1,9 +1,13 @@
+import time
 import librosa
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import os
+import threading
+import sounddevice as sd
+
 
 #function
 # takes in no data
@@ -24,7 +28,7 @@ def load_audio_data():
   ambulance_path = os.path.join(parent_dir, "Python_Scripts\\emergency_vehicle_sounds\\sounds\\ambulance")
   firetruck_path = os.path.join(parent_dir, "Python_Scripts\\emergency_vehicle_sounds\\sounds\\firetruck")
   traffic_path = os.path.join(parent_dir, "Python_Scripts\\emergency_vehicle_sounds\\sounds\\traffic")
-
+  
   #goes through path for each of the sound types and reads the data
   #emergency vehicle labels
   print("Reading files : ambulance")
@@ -56,20 +60,25 @@ def read_wav_files(path):
        #check if file type is .wav
        if filename[-4:] == ".wav":
           #read data
-          data = extract_mel_features(path + "\\" + filename)
+          data = extract_mel_features(path + "\\" + filename, None)
           #save to audio_files
           temp_audio_files.append(data)
     return(temp_audio_files)
 
 #Function
-# takes in an individual audio_file to be processed
+# takes in audio_input to be processed
 # Variables: target_length - the target length, will poll the live input feed at this rate (1hz currently)
 # outputs: a single "mel_db" - the extracted data from the file provided
-def extract_mel_features(audio_file):
+def extract_mel_features(audio_input, sample_rate = None):
   #target length of the audio clip
   target_length = 1000
 
-  sound_data, sample_rate = librosa.load(audio_file)
+  # Handle both file paths and raw audio
+  if isinstance(audio_input, str):  # If it's a file path
+      sound_data, sample_rate = librosa.load(audio_input)
+  else:  # If it's raw audio data
+      sound_data = audio_input
+        
   mel_spec = librosa.feature.melspectrogram(y=sound_data, sr=sample_rate, n_mels=128, fmax=8000)
   mel_db = librosa.power_to_db(mel_spec, ref=np.max)
 
@@ -84,21 +93,53 @@ def extract_mel_features(audio_file):
 
   return mel_db
 
-#temp function for test purposes
-def process_audio(audio_file):
+#Function
+# takes in raw audio and sample rate
+# outputs the predicted class
+def process_audio(raw_audio_data, sample_rate):
+
+  # Normalizing volume
+  raw_audio_data = raw_audio_data / np.max(np.abs(raw_audio_data))
 
   # Extract Mel-spectrogram features
-  mel_features = extract_mel_features(audio_file)
+  mel_features = extract_mel_features(raw_audio_data, sample_rate)
 
   # Flatten the features for the classifier
   mel_features_flattened = mel_features.flatten()
+  
+  # Make array 2D
+  mel_features_flattened = mel_features_flattened.reshape(1, -1)
 
   # Predict the vehicle type
-  predicted_class = model.predict([mel_features_flattened])
+  predicted_class = model.predict(mel_features_flattened)
+  
+  # Prediction confidence
+  prediction_proba = model.predict_proba(mel_features_flattened)
+  confidence = np.max(prediction_proba) * 100
+  print(f"Confidence: {confidence:.2f}%")
+  
   return predicted_class
 
+def capture_audio():
+  duration = 1  # seconds
+  sample_rate = 44100  # Hz
+  channels = 1  # mono audio
+  
+  while True:
+    try:
+      recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=channels)
+      recording = recording.flatten()
+      
+      sd.wait()
+      
+      print(f"Predicted vehicle type is : {process_audio(recording, sample_rate)}")
+    
+    except Exception as e:
+      print(f"Error in audio capture: {str(e)}")
+  
+  
 # Main execution flow
-if __name__ == "__main__":  
+if __name__ == "__main__":
   #loading in the audio files
   print("Reading audio files")
   audio_files, labels = load_audio_data()
@@ -129,22 +170,14 @@ if __name__ == "__main__":
   print("")
   print(f"Accuracy: {accuracy * 100:.2f}%")
 
-  #test files to check if the underlying system works
-  test_audio_files = [
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\sound_1.wav",
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\sound_401.wav",
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\sound_207.wav",
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\youtubeTest.wav"]
-    #sound_1 is an ambulance
-    #sound_401 is general traffic
-    #sound_207 is a firetruck
-    #youtubeTest is a video i found on youtube of a british ambulance
-
-  #testing above files
-  print("Testing Files")
-  for file in test_audio_files:
-    predicted_vehicle = process_audio(file) #Replace with your real time audio stream
-
-    print(f"Predicted vehicle type for {os.path.basename(file)}: {predicted_vehicle}")
-
-
+  audio_thread = threading.Thread(target=capture_audio)
+  audio_thread.daemon = True
+  audio_thread.start()
+  
+  try:
+    while True:
+      time.sleep(1)
+  except KeyboardInterrupt:
+    print("Keyboard input detected, halting...")
+  
+  

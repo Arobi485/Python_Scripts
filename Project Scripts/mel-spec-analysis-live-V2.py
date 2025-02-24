@@ -1,9 +1,14 @@
+import threading
+import time
 import librosa
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import os
+import sounddevice
+from scipy.io import wavfile
+import soundfile
 
 #function
 # takes in no data
@@ -84,7 +89,7 @@ def extract_mel_features(audio_file):
 
   return mel_db
 
-#temp function for test purposes
+#feed this .wav
 def process_audio(audio_file):
 
   # Extract Mel-spectrogram features
@@ -97,8 +102,41 @@ def process_audio(audio_file):
   predicted_class = model.predict([mel_features_flattened])
   return predicted_class
 
+def capture_audio():
+  duration = 1  # seconds
+  sample_rate = 44100  # Hz
+  channels = 2  # stereo audio
+  temp_file = "temp_recording.wav" # temp file to store to
+  
+  while True:
+    try:
+      recording = sounddevice.rec(int(duration * sample_rate), samplerate=sample_rate, channels=channels, dtype=np.float32, blocking=True)      
+      
+      sounddevice.wait()
+      
+      # Only proceed if we have meaningful audio
+      if np.count_nonzero(recording) < 100:  # Adjust threshold as needed
+        print("Not enough audio data detected, skipping...")
+        continue
+      
+      recording = recording / np.max(np.abs(recording))
+      soundfile.write(temp_file, recording, sample_rate, subtype='FLOAT') 
+      
+      predicted_vehicle = process_audio(temp_file)
+      
+      print(f"Predicted vehicle type for {os.path.basename(temp_file)}: {predicted_vehicle}")
+      
+      os.remove(temp_file)
+    
+    except Exception as e:
+      print(f"Error in audio capture: {str(e)}")
+  
+
 # Main execution flow
-if __name__ == "__main__":  
+if __name__ == "__main__":
+  default_device = sounddevice.query_devices(kind='input')
+  print(f"Default input device: {default_device}")
+  
   #loading in the audio files
   print("Reading audio files")
   audio_files, labels = load_audio_data()
@@ -129,22 +167,14 @@ if __name__ == "__main__":
   print("")
   print(f"Accuracy: {accuracy * 100:.2f}%")
 
-  #test files to check if the underlying system works
-  test_audio_files = [
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\sound_1.wav",
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\sound_401.wav",
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\sound_207.wav",
-    "E:\Repos\Python_Scripts\emergency_vehicle_sounds\youtubeTest.wav"]
-    #sound_1 is an ambulance
-    #sound_401 is general traffic
-    #sound_207 is a firetruck
-    #youtubeTest is a video i found on youtube of a british ambulance
-
-  #testing above files
-  print("Testing Files")
-  for file in test_audio_files:
-    predicted_vehicle = process_audio(file) #Replace with your real time audio stream
-
-    print(f"Predicted vehicle type for {os.path.basename(file)}: {predicted_vehicle}")
-
-
+  audio_thread = threading.Thread(target=capture_audio)
+  audio_thread.daemon = True
+  audio_thread.start()
+  
+  try:
+    while True:
+      time.sleep(1)
+  except KeyboardInterrupt:
+    print("Keyboard input detected, halting...")
+  
+  
