@@ -1,0 +1,5 @@
+names:
+- emergency vehicle
+nc: 1
+train: E:\Repos\Python_Scripts\emergency_vehicle_images\images\split_dataset\images\train
+val: E:\Repos\Python_Scripts\emergency_vehicle_images\images\split_dataset\images\val
