@@ -4,11 +4,13 @@ import numpy as np
 from pathlib import Path
 
 def run_detection():
+    confidence_threshhold = 0.7
+
     # Load your trained weights
     weights_path = input("Enter path to your .pt weights file: ")
     
     # Custom class names - update these to match your classes
-    class_names = ['ambulance', 'firetruck', 'police', 'traffic']
+    class_names = ['emergency vehicle']
     
     # Load the model with your custom weights
     try:
@@ -62,13 +64,16 @@ def run_detection():
                     cls = int(box.cls[0])
                     conf = float(box.conf[0])
                     
-                    # Draw box
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    if conf >= confidence_threshhold:
+                        # Draw box
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     
-                    # Add label
-                    label = f'{class_names[cls]} {conf:.2f}'
-                    cv2.putText(frame, label, (x1, y1-10), 
+                        # Add label
+                        label = f'{class_names[cls]} {conf:.2f}'
+                        cv2.putText(frame, label, (x1, y1-10), 
                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                    
             
             # Write frame
             out.write(frame)
