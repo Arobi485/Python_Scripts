@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 import os
 
-class emergency_vehicle_yoloV5:
+class emergencyVehicleYoloV5:
     def __init__(self):
         if not os.path.exists("emergency_detection_scripts\\emergency_vehicles_trained_model\\weights\\best.pt"):
             print("Error locating weights file for YOLOv5 model, recommended to run training")

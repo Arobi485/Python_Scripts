@@ -1,20 +1,15 @@
 #external imports
 from joblib import load
-import librosa
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
 import os
 
 #internal imports
 from extract_mel_features import extract_mel
-from training_mel_spec import train_mel_spec
+from training_mel_spec import trainMelSpec
 
-class mel_spec_analysis:
+class melSpecAnalysis:
   def __init__(self):
     if not os.path.exists("mel_spec_model.joblib"):
-          tms = train_mel_spec()
+          tms = trainMelSpec()
 
           print("Error locating model file for mel-spec analysis, generating now")
           tms.train_model()

@@ -7,7 +7,7 @@ import os
 
 from extract_mel_features import extract_mel
 
-class train_mel_spec:
+class trainMelSpec:
     def __init__(self):
         pass
 

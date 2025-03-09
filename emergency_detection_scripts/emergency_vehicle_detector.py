@@ -8,21 +8,23 @@
 
 #external
 import threading
+import time
 
 #internal
-from mel_spec_analysis_class import mel_spec_analysis
-from yoloV5_detection_class import emergency_vehicle_yoloV5
+from mel_spec_analysis_class import melSpecAnalysis
+from yoloV5_detection_class import emergencyVehicleYoloV5
+from audio_visual_input import AudioVisualRecorder
 
 class emergency_vehicle_detection_class:
     def __init__(self):
         # starting up yoloV5 model
-        self.yolo = emergency_vehicle_yoloV5()
+        self.yolo = emergencyVehicleYoloV5()
 
         # starting up mel-spec model, will retrain if no model found
-        self.msa = mel_spec_analysis()
+        self.msa = melSpecAnalysis()
 
     def check_mel(self):
-        self.msa.check_file("emergency_detection_scripts\\test_files\\sound_1.wav")
+        self.msa.check_file("audio.wav")
         
     def check_yolo(self):
         # confidence check for yolo
@@ -31,7 +33,7 @@ class emergency_vehicle_detection_class:
         # checking test files
         yolo_output = []
 
-        yolo_output = self.yolo.run_detection("emergency_detection_scripts\\test_files\\test1.png")
+        yolo_output = self.yolo.run_detection("image.png")
 
         if yolo_output != []:
             for value in yolo_output:
@@ -58,9 +60,22 @@ class emergency_vehicle_detection_class:
 
 if __name__ == "__main__":
     detection = emergency_vehicle_detection_class()
+
+    recorder = AudioVisualRecorder()
     
-    # start detection threads
-    detection.start_detection()
+    print("Starting recording... Press Ctrl+C to stop")
+    audio_thread, image_thread = recorder.start_recording()
     
-    # wait for both detections to complete
-    detection.wait_for_completion()
+    try:
+        while True:
+            time.sleep(0.25)
+            # start detection threads
+            detection.start_detection()
+            detection.wait_for_completion()
+    except KeyboardInterrupt:
+        print("\nStopping recording...")
+        recorder.stop_recording()
+        audio_thread.join()
+        image_thread.join()
+        recorder.cleanup()
+        print("Recording stopped")
