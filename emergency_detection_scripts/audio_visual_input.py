@@ -9,7 +9,7 @@ from datetime import datetime
 import noisereduce as nr
 from scipy import signal
 
-class AudioVisualRecorder:
+class Audio_Visual_Recorder:
     def __init__(self):        
         # start cv2 camera
         self.camera = cv2.VideoCapture(0)
@@ -19,7 +19,7 @@ class AudioVisualRecorder:
         
         self.is_recording = False
 
-    def capture_audio(self):
+    def __capture_audio(self):
         chunk = 1024
         format = pyaudio.paInt16
         channels = 2
@@ -49,7 +49,7 @@ class AudioVisualRecorder:
         stream.stop_stream()
         stream.close()
 
-    def capture_images(self):
+    def __capture_images(self):
         while self.is_recording:
             ret, frame = self.camera.read()
             if ret:
@@ -59,10 +59,10 @@ class AudioVisualRecorder:
     def start_recording(self):
         self.is_recording = True
         
-        audio_thread = threading.Thread(target=self.capture_audio)
+        audio_thread = threading.Thread(target=self.__capture_audio)
         audio_thread.start()
         
-        image_thread = threading.Thread(target=self.capture_images)
+        image_thread = threading.Thread(target=self.__capture_images)
         image_thread.start()
         
         return audio_thread, image_thread

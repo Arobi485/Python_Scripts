@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 import os
 
-class emergencyVehicleYoloV5:
+class Emergency_Vehicle_YoloV5:
     def __init__(self):
         if not os.path.exists("emergency_detection_scripts\\emergency_vehicles_trained_model\\weights\\best.pt"):
             print("Error locating weights file for YOLOv5 model, recommended to run training")
@@ -10,19 +10,14 @@ class emergencyVehicleYoloV5:
 
     def run_detection(self, image_location):
         #confidence threshhold so that it doesnt flag everything it sees
-        confidence_threshhold = 0.7
+        confidence_threshhold = 0.9
 
         # loading in the trained weights from local location
         weights_path = "emergency_detection_scripts\\emergency_vehicles_trained_model\\weights\\best.pt"
         
-        # only classs is emergency vehicle
-        class_names = ['emergency vehicle']
-        
         # loading in the YOLO v5 model with my trained weights to locate emergency vehicles
         try:
             model = YOLO(weights_path)
-            #print("Loaded custom weights successfully")
-            #print(f"Model classes: {model.names}")
         except Exception as e:
             print(f"Error loading weights: {e}")
             return      
@@ -35,7 +30,7 @@ class emergencyVehicleYoloV5:
         
         # Run detection
         results = model.predict(image, confidence_threshhold, verbose = False)  # Adjust confidence threshold as needed
-        
+
         # result output
         output_confidences = []
 

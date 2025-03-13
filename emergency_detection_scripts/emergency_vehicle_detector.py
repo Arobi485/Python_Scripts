@@ -3,30 +3,30 @@
 #           runs these both on seperate threads as to not back up the system
 #           possible run the Yolo model on images instead of a video stream?
 #           get the mel-analysis to actually work on short recorded clips
-#           or just handle the saving side of that here then just pass the path?
-#           DO THIS /\
+#           or just handle the saving side of that here then just pass the path? DID THIS IN THE END
+#           DONE THIS /\ :)
 
 #external
 import threading
 import time
 
 #internal
-from mel_spec_analysis_class import melSpecAnalysis
+from mel_spec_analysis_class import Mel_Spec_Analysis
 from yoloV5_detection_class import emergencyVehicleYoloV5
-from audio_visual_input import AudioVisualRecorder
+from audio_visual_input import Audio_Visual_Recorder
 
-class emergency_vehicle_detection_class:
+class Emergency_Vehicle_Detection_Class:
     def __init__(self):
         # starting up yoloV5 model
         self.yolo = emergencyVehicleYoloV5()
 
         # starting up mel-spec model, will retrain if no model found
-        self.msa = melSpecAnalysis()
+        self.msa = Mel_Spec_Analysis()
 
-    def check_mel(self):
+    def __check_mel(self):
         self.msa.check_file("audio.wav")
         
-    def check_yolo(self):
+    def __check_yolo(self):
         # confidence check for yolo
         confidence_check = 0.9
 
@@ -44,8 +44,8 @@ class emergency_vehicle_detection_class:
 
     def start_detection(self):
         # Create threads
-        self.yolo_thread = threading.Thread(target=self.check_yolo)
-        self.mel_thread = threading.Thread(target=self.check_mel)
+        self.yolo_thread = threading.Thread(target=self.__check_yolo)
+        self.mel_thread = threading.Thread(target=self.__check_mel)
 
         # Start both threads
         self.yolo_thread.start()
@@ -59,9 +59,9 @@ class emergency_vehicle_detection_class:
             self.mel_thread.join()
 
 if __name__ == "__main__":
-    detection = emergency_vehicle_detection_class()
+    detection = Emergency_Vehicle_Detection_Class()
 
-    recorder = AudioVisualRecorder()
+    recorder = Audio_Visual_Recorder()
     
     print("Starting recording... Press Ctrl+C to stop")
     audio_thread, image_thread = recorder.start_recording()

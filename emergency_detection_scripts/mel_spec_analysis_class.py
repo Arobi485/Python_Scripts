@@ -4,12 +4,14 @@ import os
 
 #internal imports
 from extract_mel_features import extract_mel
-from training_mel_spec import trainMelSpec
+from training_mel_spec import Train_Mel_Spec
 
-class melSpecAnalysis:
+#2 seperate models that combine their outputs at the end
+
+class Mel_Spec_Analysis:
   def __init__(self):
     if not os.path.exists("mel_spec_model.joblib"):
-          tms = trainMelSpec()
+          tms = Train_Mel_Spec()
 
           print("Error locating model file for mel-spec analysis, generating now")
           tms.train_model()

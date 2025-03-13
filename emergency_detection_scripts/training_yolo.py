@@ -1,10 +1,7 @@
-import os
-import subprocess
-import sys
 from pathlib import Path
 import yaml
 
-def verify_dataset(dataset_path):
+def __verify_dataset(dataset_path):
     """Verify dataset structure and content"""
     dataset_path = Path(dataset_path)
     
@@ -46,26 +43,7 @@ def verify_dataset(dataset_path):
     
     return True
 
-def install_requirements():
-    print("\nInstalling required packages...")
-    packages = [
-        'ultralytics',
-        'torch',
-        'torchvision',
-        'opencv-python',
-        'pyyaml'
-    ]
-    
-    for package in packages:
-        try:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
-            print(f"✓ Installed {package}")
-        except Exception as e:
-            print(f"✗ Error installing {package}: {e}")
-            return False
-    return True
-
-def train_model(dataset_path, project_dir, epochs, batch_size, image_size):
+def __train_model(dataset_path, project_dir, epochs, batch_size, image_size):
     print("\nStarting model training...")
     
     try:
@@ -133,7 +111,7 @@ def main():
     # Get dataset path
     while True:
         dataset_path = input("\nEnter the path to your YOLO dataset (containing data.yaml): ").strip()
-        if verify_dataset(dataset_path):
+        if __verify_dataset(dataset_path):
             break
         print("\nPlease fix dataset issues and try again.")
     
@@ -155,7 +133,7 @@ def main():
         return
     
     # Train model
-    if train_model(dataset_path, project_dir, epochs, batch_size, image_size):
+    if __train_model(dataset_path, project_dir, epochs, batch_size, image_size):
         print("\n✓ Training completed successfully!")
         print(f"Check weights at: {project_dir / 'emergency_vehicles' / 'weights' / 'best.pt'}")
     else:
